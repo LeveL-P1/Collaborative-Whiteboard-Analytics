@@ -1,8 +1,10 @@
 import { useEffect } from "react"
 import { useCanvas } from "../hooks/useCanvas"
+import { useRealtime } from "../hooks/useRealtime"
 import { getCanvasCoordinates } from "../utils/canvasMath"
 import type { Stroke } from "../models/stroke"
-import DrawingToolbar from "./DrawingToolbar"
+
+const SESSION_ID = "demo-session"
 
 export default function WhiteboardCanvas() {
   const {
@@ -12,9 +14,10 @@ export default function WhiteboardCanvas() {
     startStroke,
     updateStroke,
     endStroke,
-    undoLastStroke,
-    clearCanvas
-  } = useCanvas("local-user")
+    applyRemoteEvent
+  } = useCanvas(crypto.randomUUID())
+
+  const { emitEvent } = useRealtime(SESSION_ID, applyRemoteEvent)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -38,48 +41,45 @@ export default function WhiteboardCanvas() {
     ctx.beginPath()
     ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
 
-    stroke.points.forEach(p => {
-      ctx.lineTo(p.x, p.y)
-    })
-
+    stroke.points.forEach(p => ctx.lineTo(p.x, p.y))
     ctx.stroke()
   }
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    strokes.forEach(stroke => drawStroke(ctx, stroke))
+    strokes.forEach(s => drawStroke(ctx, s))
     if (currentStroke) drawStroke(ctx, currentStroke)
   }, [strokes, currentStroke])
 
   return (
-    <div>
-      <DrawingToolbar
-        onUndo={undoLastStroke}
-        onClear={clearCanvas}
-      />
-
-      <canvas
-        ref={canvasRef}
-        style={{ border: "1px solid #ccc", cursor: "crosshair" }}
-        onMouseDown={e => {
-          const { x, y } = getCanvasCoordinates(e)
-          startStroke(x, y)
-        }}
-        onMouseMove={e => {
-          if (e.buttons !== 1) return
-          const { x, y } = getCanvasCoordinates(e)
-          updateStroke(x, y)
-        }}
-        onMouseUp={endStroke}
-        onMouseLeave={endStroke}
-      />
-    </div>
+    <canvas
+      ref={canvasRef}
+      style={{ border: "1px solid #ccc", cursor: "crosshair" }}
+      onMouseDown={e => {
+        const { x, y } = getCanvasCoordinates(e)
+        const ev = startStroke(x, y)
+        emitEvent(ev)
+      }}
+      onMouseMove={e => {
+        if (e.buttons !== 1) return
+        const { x, y } = getCanvasCoordinates(e)
+        const ev = updateStroke(x, y)
+        if (ev) emitEvent(ev)
+      }}
+      onMouseUp={() => {
+        const ev = endStroke()
+        if (ev) emitEvent(ev)
+      }}
+      onMouseLeave={() => {
+        const ev = endStroke()
+        if (ev) emitEvent(ev)
+      }}
+    />
   )
 }
