@@ -1,6 +1,8 @@
 import { useEffect } from "react"
 import { useCanvas } from "../hooks/useCanvas"
+import { getCanvasCoordinates } from "../utils/canvasMath"
 import type { Stroke } from "../models/stroke"
+import DrawingToolbar from "./DrawingToolbar"
 
 export default function WhiteboardCanvas() {
   const {
@@ -9,7 +11,9 @@ export default function WhiteboardCanvas() {
     currentStroke,
     startStroke,
     updateStroke,
-    endStroke
+    endStroke,
+    undoLastStroke,
+    clearCanvas
   } = useCanvas("local-user")
 
   useEffect(() => {
@@ -34,8 +38,8 @@ export default function WhiteboardCanvas() {
     ctx.beginPath()
     ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
 
-    stroke.points.forEach(point => {
-      ctx.lineTo(point.x, point.y)
+    stroke.points.forEach(p => {
+      ctx.lineTo(p.x, p.y)
     })
 
     ctx.stroke()
@@ -54,31 +58,28 @@ export default function WhiteboardCanvas() {
     if (currentStroke) drawStroke(ctx, currentStroke)
   }, [strokes, currentStroke])
 
-  const getCanvasCoords = (
-    e: React.MouseEvent<HTMLCanvasElement>
-  ) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    }
-  }
-
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ border: "1px solid #ccc", cursor: "crosshair" }}
-      onMouseDown={e => {
-        const { x, y } = getCanvasCoords(e)
-        startStroke(x, y)
-      }}
-      onMouseMove={e => {
-        if (e.buttons !== 1) return
-        const { x, y } = getCanvasCoords(e)
-        updateStroke(x, y)
-      }}
-      onMouseUp={endStroke}
-      onMouseLeave={endStroke}
-    />
+    <div>
+      <DrawingToolbar
+        onUndo={undoLastStroke}
+        onClear={clearCanvas}
+      />
+
+      <canvas
+        ref={canvasRef}
+        style={{ border: "1px solid #ccc", cursor: "crosshair" }}
+        onMouseDown={e => {
+          const { x, y } = getCanvasCoordinates(e)
+          startStroke(x, y)
+        }}
+        onMouseMove={e => {
+          if (e.buttons !== 1) return
+          const { x, y } = getCanvasCoordinates(e)
+          updateStroke(x, y)
+        }}
+        onMouseUp={endStroke}
+        onMouseLeave={endStroke}
+      />
+    </div>
   )
 }

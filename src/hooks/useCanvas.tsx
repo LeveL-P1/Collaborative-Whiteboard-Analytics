@@ -51,6 +51,11 @@ export function useCanvas(userId: string) {
     setStrokes(prev => prev.slice(0, -1))
   }
 
+  const clearCanvas = () => {
+    setStrokes([])
+    setCurrentStroke(null)
+  }
+
   return {
     canvasRef,
     strokes,
@@ -58,6 +63,7 @@ export function useCanvas(userId: string) {
     startStroke,
     updateStroke,
     endStroke,
-    undoLastStroke
+    undoLastStroke,
+    clearCanvas
   }
 }
