@@ -1,12 +1,12 @@
-import WhiteboardCanvas from "./components/WhiteboardCanvas"
+
+import React from 'react';
+import './App.css';
 
 function App() {
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Collaborative Whiteboard – Phase 1</h2>
-      <WhiteboardCanvas />
+    <div className="App">
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
