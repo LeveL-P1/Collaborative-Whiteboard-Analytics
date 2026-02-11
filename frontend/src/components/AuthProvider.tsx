@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type {ReactNode} from 'react'
+import type { ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 import { AuthContext } from '@/hooks/useAuth'
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const signUp = async (email: string, password: string, name: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -43,21 +43,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     })
 
     if (error) throw error
-
-    // Create profile entry
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user.id,
-            email: data.user.email,
-            name: name,
-          }
-        ])
-      
-      if (profileError) throw profileError
-    }
   }
 
   const signIn = async (email: string, password: string) => {
